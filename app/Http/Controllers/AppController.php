@@ -35,12 +35,12 @@ class AppController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
+    {   
         $app = new App();
         $app->logo = $request->logo;
         $app->name = $request->name;
         $app->save();
-  
+
         return response()->json([
                 
             "message" => "new app stored"
@@ -94,9 +94,31 @@ class AppController extends Controller
         //
     }
 
-    ///METODO PLUCK!!
-    //$app_id = $user_apps->pluck('name'); 
+    //INTRODUCIR LISTA DE APLICACIONES// //TERMINADO//
+    public function store_apps_list()
+    {        
+        $array_csv = array_map('str_getcsv', file('/Users/alumnos/Desktop/CSV_BIENESTAR_DIGITAL/app_info.csv')); 
+        
+        foreach ($array_csv as $key => $line) {
 
+            if($key != 0)
+            {
+                $app = new App();
+                $app->logo = $line[0];
+                $app->name = $line[1];
+                $app->save();
+
+            }     
+                       
+        }
+  
+        return response()->json([
+                
+            "message" => "all apps stored"
+
+        ], 200);
+
+    }
 
     ///BETA///
     public function get_app_details(Request $request, $id)
@@ -115,15 +137,6 @@ class AppController extends Controller
             "jeilo" => $app,
 
         ], 200);
-
-    }
-
-    ///FALTA POR TERMINAR//
-    public function store_app_restrictions(Request $request, $id)
-    {
-        
-        $app = App::where('id', '=', $id)->first();
-        $request_user = $request->user;
 
     }
 
