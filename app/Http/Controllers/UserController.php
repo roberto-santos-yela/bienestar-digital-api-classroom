@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\User;
+use App\App;
 use Mail;
 use Carbon\Carbon;
 use App\Helpers\Token;
@@ -190,19 +191,30 @@ class UserController extends Controller
     }
 
     //POR TERMINAR//
-    public function store_app_data(Request $request, $id)
+    public function store_app_data(Request $request)
     {
         $request_user = $request->user; 
-        $user_id = $request_user->id;
+        $array_csv = array_map('str_getcsv', file('/Users/alumnos/Desktop/CSV_BIENESTAR_DIGITAL/usage.csv'));   
 
-        $request_user->apps()->attach($id, [
+        foreach ($array_csv as $key => $line) {
+                              
+            if($key != 0)
+            {
+                $name = $line[1];             
+                $app = App::where('name', '=', $name)->first();
+                
+                $request_user->apps()->attach($app->id, [
 
-            'date' => $request->date, 
-            'event' => $request->event,                      
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
+                    'date' => $line[0], 
+                    'event' => $line[2],                      
+                    'latitude' => $line[3],
+                    'longitude' => $line[4],
+        
+                ]); 
 
-        ]); 
+            }
+    
+        }
 
     }
 
@@ -246,8 +258,6 @@ class UserController extends Controller
 
     }
 
-
-
     //CREAR RESTRICCIONES// //TERMINADO//
     public function create_restriction(Request $request, $id)
     {
@@ -288,8 +298,6 @@ class UserController extends Controller
         ], 200);
 
     }
-
-
 
     ///BORRAR RESTRICCIONES/// ///NO TERMINADO///
     
