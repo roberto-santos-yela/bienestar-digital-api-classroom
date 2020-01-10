@@ -267,9 +267,7 @@ class UserController extends Controller
         $app_entries = $request_user->apps()->wherePivot('app_id', $id)->whereDate('date', "=", '2019-11-18')->get();
         
         //$app_entries = $request_user->apps()->wherePivot('app_id', $id)->get();
-
         
-
         $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();   
         $app_entries_lenght = count($app_entries);
         $total_time_in_seconds = 0;
