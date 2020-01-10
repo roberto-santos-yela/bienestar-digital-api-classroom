@@ -29,6 +29,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/create_restriction/{id}', 'UserController@create_restriction');
     Route::post('/change_user_password', 'UserController@change_user_password');
     Route::get('/get_time_diff/{id}', 'UserController@get_time_diff');
+
+    Route::get('/daily_usage_time/{id}', 'UserController@daily_usage_time');
         
     Route::apiResource('/app', 'AppController');  
     Route::post('/store_apps_list', 'AppController@store_apps_list');   
