@@ -222,7 +222,8 @@ class UserController extends Controller
     public function get_time_diff(Request $request, $id)
     {
         $request_user = $request->user;
-        $app_entries = $request_user->apps()->wherePivot('app_id', 1)->get();       
+        $app_entries = $request_user->apps()->wherePivot('app_id', $id)->get(); 
+        $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();     
         $app_entries_lenght = count($app_entries);
         $total_time_in_seconds = 0;
                 
@@ -252,11 +253,83 @@ class UserController extends Controller
 
         return response()->json([
 
+            "app_name" => $app_entry->name,
             "total_usage_time" => $total_usage_time,  
 
         ]);
 
     }
+
+    //PRUEBA//
+    public function daily_usage_time(Request $request, $id)
+    {
+        $request_user = $request->user;
+        $app_entries = $request_user->apps()->wherePivot('app_id', $id)->whereDate('date', "=", '2019-11-18')->get();
+        
+        //$app_entries = $request_user->apps()->wherePivot('app_id', $id)->get();
+
+        
+
+        $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();   
+        $app_entries_lenght = count($app_entries);
+        $total_time_in_seconds = 0;
+                
+        for ($x = 0; $x <= $app_entries_lenght - 1; $x++) {
+
+            $have_both_hours = false;
+
+            if($app_entries[$x]->pivot->event == "opens")
+            {
+                $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date); 
+                
+                //$next_day = $from_hour->addDays(1);  
+                //$next_day_date_format = Carbon::createFromFormat('Y-m-d H:i:s',$next_day)->format('Y-m-d');
+                
+                $from_hour_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date)->format('Y-m-d'); 
+                $from_hour_format_to_midnight = $from_hour_format . ' 23:59:59';
+                $today_to_midnight = Carbon::parse($from_hour_format_to_midnight);
+                $time_diff_till_midnight = $from_hour->diffInSeconds($today_to_midnight);
+                $total_time_in_seconds = $total_time_in_seconds + $time_diff_till_midnight;
+
+                //var_dump($total_time_in_seconds); exit;
+
+                //$prueba = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();
+                //var_dump($prueba); exit;
+                //$datetime = new Carbon('2016-01-23 00:00:00');
+                //$datetime = new Carbon($from_hour_format + '00:00:00');
+                
+                $have_both_hours = false;
+                
+                
+            }else if($app_entries[$x]->pivot->event == "closes"){
+
+                $total_time_in_seconds = $total_time_in_seconds - $time_diff_till_midnight;
+
+                $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date);                              
+                $have_both_hours = true;
+
+            }
+            
+            if($have_both_hours)
+            {
+                $total_time_in_seconds += $from_hour->diffInSeconds($to_hour);
+
+            }           
+
+        }
+
+        $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();
+
+        return response()->json([
+
+            "app_name" => $app_entry->name,
+            "total_usage_time" => $total_usage_time,  
+
+        ]);
+
+    }
+
+
 
     //CREAR RESTRICCIONES// //TERMINADO//
     public function create_restriction(Request $request, $id)
