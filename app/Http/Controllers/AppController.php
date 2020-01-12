@@ -97,7 +97,7 @@ class AppController extends Controller
     //INTRODUCIR LISTA DE APLICACIONES// //TERMINADO//
     public function store_apps_list()
     {        
-        $array_csv = array_map('str_getcsv', file('/Users/alumnos/Desktop/CSV_BIENESTAR_DIGITAL/app_info.csv')); 
+        $array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\apps_list.csv')); 
         
         foreach ($array_csv as $key => $line) {
 
