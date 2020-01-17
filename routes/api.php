@@ -21,6 +21,7 @@ Route::post('/create_user', 'UserController@store');
 Route::post('/recover_password', 'UserController@recover_password');
 Route::post('/user_login', 'UserController@user_login');
 Route::get('/generate_password', 'UserController@generate_password');
+Route::post('/store_apps_list', 'AppController@store_apps_list'); 
 
 Route::group(['middleware' => ['auth']], function () {
 
@@ -32,8 +33,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/daily_usage_time/{id}', 'UserController@daily_usage_time');
         
-    Route::apiResource('/app', 'AppController');  
-    Route::post('/store_apps_list', 'AppController@store_apps_list');   
+    Route::apiResource('/app', 'AppController');        
     Route::get('/get_app_details', 'AppController@get_app_details');
     Route::get('/get_app_statistics', 'AppController@get_app_statistics');
     Route::get('/get_app_coordinates/{app_name}/{app_date}', 'AppController@get_app_coordinates');
