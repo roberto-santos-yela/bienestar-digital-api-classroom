@@ -194,7 +194,7 @@ class UserController extends Controller
     public function store_app_data(Request $request)
     {
         $request_user = $request->user; 
-        $array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\usage.csv'));   
+        $array_csv = array_map('str_getcsv', file('/Applications/MAMP/htdocs/bienestar-digital-api-classroom/csv_files/usage.csv'));   
 
         foreach ($array_csv as $key => $line) {
                               
