@@ -264,93 +264,24 @@ class AppController extends Controller
         $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();   
         $app_entries_lenght = count($app_entries[$date]);
 
-        
 
+        $dates = [];
 
-        $total_time_in_seconds = 0;
+        foreach ($app_entries as $key => $value) {
+            
 
-        if($app_entries[$date][0]->pivot->event == "closes")
-        {                                  
-            $date_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][0]->pivot->date)->format('Y-m-d'); 
-            $date_format_at_midnight = $date_format . ' 00:00:00';
-            $date_from_midnight = Carbon::parse($date_format_at_midnight);
-            $date_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][0]->pivot->date);
-            $time_diff_from_midnight_in_seconds = $date_from_midnight->diffInSeconds($date_hour);
-            $total_time_in_seconds = $total_time_in_seconds + $time_diff_from_midnight_in_seconds;            
-
-            for ($x = 1; $x <= $app_entries_lenght - 1; $x++) {
-
-                $have_both_hours = true;
-    
-                if($app_entries[$date][$x]->pivot->event == "opens")
-                {
-                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                
-                    $from_hour_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date)->format('Y-m-d'); 
-                    $from_hour_format_to_midnight = $from_hour_format . ' 23:59:59';
-                    $today_to_midnight = Carbon::parse($from_hour_format_to_midnight);
-                    $time_diff_till_midnight = $from_hour->diffInSeconds($today_to_midnight);
-                    $total_time_in_seconds = $total_time_in_seconds + $time_diff_till_midnight;                             
-                    $have_both_hours = false;                
-                    
-                }else if($app_entries[$date][$x]->pivot->event == "closes"){
-    
-                    $total_time_in_seconds = $total_time_in_seconds - $time_diff_till_midnight;
-                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                        
-                    $have_both_hours = true;
-    
-                }
-                
-                if($have_both_hours)
-                {
-                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour);
-    
-                }           
-    
-            }
-
-        }else{
-
-            for ($x = 0; $x <= $app_entries_lenght - 1; $x++) {
-
-                $have_both_hours = true;
-    
-                if($app_entries[$date][$x]->pivot->event == "opens")
-                {
-                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                
-                    $from_hour_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date)->format('Y-m-d'); 
-                    $from_hour_format_to_midnight = $from_hour_format . ' 23:59:59';
-                    $today_to_midnight = Carbon::parse($from_hour_format_to_midnight);
-                    $time_diff_till_midnight = $from_hour->diffInSeconds($today_to_midnight);
-                    $total_time_in_seconds = $total_time_in_seconds + $time_diff_till_midnight;                             
-                    $have_both_hours = false;                
-                    
-                }else if($app_entries[$date][$x]->pivot->event == "closes"){
-    
-                    $total_time_in_seconds = $total_time_in_seconds - $time_diff_till_midnight;
-                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                        
-                    $have_both_hours = true;
-    
-                }
-                
-                if($have_both_hours)
-                {
-                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour);
-    
-                }           
-    
-            }
-
+            array_push($dates, $value);
+            echo $dates;
+            
         }
 
-        $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();
+        return response()->json(
 
-        return response()->json([
+            $app_entries
 
-            "app_name" => $app_entry->name,
-            "total_usage_time" => $total_usage_time,  
 
-        ]);
-
+        , 200);
+        
     }
 
     //TIEMPO TOTAL DE DIAS ANTERIORES//
