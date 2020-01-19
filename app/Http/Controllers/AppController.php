@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 use App\App;
 use App\UserHasApp;
 
@@ -15,7 +16,13 @@ class AppController extends Controller
      */
     public function index()
     {
-        //
+        $apps = App::all();
+        
+        return response()->json(
+
+            $apps
+
+        , 200);
     }
 
     /**
@@ -94,10 +101,12 @@ class AppController extends Controller
         //
     }
 
-    //INTRODUCIR LISTA DE APLICACIONES// //TERMINADO//
+    //INTRODUCIR LISTA DE APLICACIONES// 
+    //POR TERMINAR// //FALTA HACER QUE NO SE REPITA Y QUE SE PASE POR CSV A LA APLICACIÓN//
     public function store_apps_list()
     {        
-        $array_csv = array_map('str_getcsv', file('/Applications/MAMP/htdocs/bienestar-digital-api-classroom/csv_files/apps_list.csv')); 
+        //$array_csv = array_map('str_getcsv', file('/Applications/MAMP/htdocs/bienestar-digital-api-classroom/csv_files/apps_list.csv')); 
+        $array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\apps_list.csv')); 
         
         foreach ($array_csv as $key => $line) {
 
@@ -116,13 +125,252 @@ class AppController extends Controller
 
         return response()->json(
 
-            $apps   
-
-                     
+            $apps                      
 
         , 200);
 
     }
+
+    //PETICIÓN QUE INTRODUCE LOS DATOS DE USO DE LAS APLICACIONES MEDIANTE UN CSV Y LOS VINCULA CON EL USUARIO// 
+    //POR TERMINAR// //FALTA INTRODUCIR MEDIANTE UN CSV DE LA APLICACIÓN//   
+    public function store_apps_data(Request $request)
+    {
+        $request_user = $request->user; 
+        $array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\usage_dummy.csv'));   
+
+        foreach ($array_csv as $key => $line) {
+                              
+            if($key != 0)
+            {
+                $name = $line[1];             
+                $app = App::where('name', '=', $name)->first();
+                
+                $request_user->apps()->attach($app->id, [
+
+                    'date' => $line[0], 
+                    'event' => $line[2],                      
+                    'latitude' => $line[3],
+                    'longitude' => $line[4],
+        
+                ]); 
+
+            }
+    
+        }
+
+    }
+
+    //PRUEBA////GUARDARLO COMO ORO EN PANO//
+    public function total_usage_time(Request $request, $id)
+    {
+        $request_user = $request->user;
+        $app_entries = $request_user->apps()->wherePivot('app_id', $id)->whereDate('date', "=", '2019-11-19')->get();//ATENTO A LA DATE//    
+        $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();   
+        $app_entries_lenght = count($app_entries);
+        $total_time_in_seconds = 0;
+
+        if($app_entries[0]->pivot->event == "closes")
+        {                                  
+            $date_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[0]->pivot->date)->format('Y-m-d'); 
+            $date_format_at_midnight = $date_format . ' 00:00:00';
+            $date_from_midnight = Carbon::parse($date_format_at_midnight);
+            $date_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[0]->pivot->date);
+            $time_diff_from_midnight_in_seconds = $date_from_midnight->diffInSeconds($date_hour);
+            $total_time_in_seconds = $total_time_in_seconds + $time_diff_from_midnight_in_seconds;            
+
+            for ($x = 1; $x <= $app_entries_lenght - 1; $x++) {
+
+                $have_both_hours = true;
+    
+                if($app_entries[$x]->pivot->event == "opens")
+                {
+                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date);                
+                    $from_hour_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date)->format('Y-m-d'); 
+                    $from_hour_format_to_midnight = $from_hour_format . ' 23:59:59';
+                    $today_to_midnight = Carbon::parse($from_hour_format_to_midnight);
+                    $time_diff_till_midnight = $from_hour->diffInSeconds($today_to_midnight);
+                    $total_time_in_seconds = $total_time_in_seconds + $time_diff_till_midnight;                             
+                    $have_both_hours = false;                
+                    
+                }else if($app_entries[$x]->pivot->event == "closes"){
+    
+                    $total_time_in_seconds = $total_time_in_seconds - $time_diff_till_midnight;
+                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date);                        
+                    $have_both_hours = true;
+    
+                }
+                
+                if($have_both_hours)
+                {
+                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour);
+    
+                }           
+    
+            }
+
+        }else{
+
+            for ($x = 0; $x <= $app_entries_lenght - 1; $x++) {
+
+                $have_both_hours = true;
+    
+                if($app_entries[$x]->pivot->event == "opens")
+                {
+                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date);                
+                    $from_hour_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date)->format('Y-m-d'); 
+                    $from_hour_format_to_midnight = $from_hour_format . ' 23:59:59';
+                    $today_to_midnight = Carbon::parse($from_hour_format_to_midnight);
+                    $time_diff_till_midnight = $from_hour->diffInSeconds($today_to_midnight);
+                    $total_time_in_seconds = $total_time_in_seconds + $time_diff_till_midnight;                             
+                    $have_both_hours = false;                
+                    
+                }else if($app_entries[$x]->pivot->event == "closes"){
+    
+                    $total_time_in_seconds = $total_time_in_seconds - $time_diff_till_midnight;
+                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$x]->pivot->date);                        
+                    $have_both_hours = true;
+    
+                }
+                
+                if($have_both_hours)
+                {
+                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour);
+    
+                }           
+    
+            }
+
+        }
+
+        $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();
+
+        return response()->json([
+
+            "app_name" => $app_entry->name,
+            "total_usage_time" => $total_usage_time,  
+
+        ]);
+
+    }
+
+    //TIEMPO DE USO TOTAL// //HACE FALTA REFACTORIZAR//
+    public function total_usage_time_beta(Request $request, $id)
+    {
+        $request_user = $request->user;       
+        $app_entries = $request_user->apps_dates()->get()->groupBy('date_group');     
+        $date = "2019-11-18";
+
+                 
+        $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();   
+        $app_entries_lenght = count($app_entries[$date]);
+
+        
+
+
+        $total_time_in_seconds = 0;
+
+        if($app_entries[$date][0]->pivot->event == "closes")
+        {                                  
+            $date_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][0]->pivot->date)->format('Y-m-d'); 
+            $date_format_at_midnight = $date_format . ' 00:00:00';
+            $date_from_midnight = Carbon::parse($date_format_at_midnight);
+            $date_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][0]->pivot->date);
+            $time_diff_from_midnight_in_seconds = $date_from_midnight->diffInSeconds($date_hour);
+            $total_time_in_seconds = $total_time_in_seconds + $time_diff_from_midnight_in_seconds;            
+
+            for ($x = 1; $x <= $app_entries_lenght - 1; $x++) {
+
+                $have_both_hours = true;
+    
+                if($app_entries[$date][$x]->pivot->event == "opens")
+                {
+                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                
+                    $from_hour_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date)->format('Y-m-d'); 
+                    $from_hour_format_to_midnight = $from_hour_format . ' 23:59:59';
+                    $today_to_midnight = Carbon::parse($from_hour_format_to_midnight);
+                    $time_diff_till_midnight = $from_hour->diffInSeconds($today_to_midnight);
+                    $total_time_in_seconds = $total_time_in_seconds + $time_diff_till_midnight;                             
+                    $have_both_hours = false;                
+                    
+                }else if($app_entries[$date][$x]->pivot->event == "closes"){
+    
+                    $total_time_in_seconds = $total_time_in_seconds - $time_diff_till_midnight;
+                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                        
+                    $have_both_hours = true;
+    
+                }
+                
+                if($have_both_hours)
+                {
+                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour);
+    
+                }           
+    
+            }
+
+        }else{
+
+            for ($x = 0; $x <= $app_entries_lenght - 1; $x++) {
+
+                $have_both_hours = true;
+    
+                if($app_entries[$date][$x]->pivot->event == "opens")
+                {
+                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                
+                    $from_hour_format = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date)->format('Y-m-d'); 
+                    $from_hour_format_to_midnight = $from_hour_format . ' 23:59:59';
+                    $today_to_midnight = Carbon::parse($from_hour_format_to_midnight);
+                    $time_diff_till_midnight = $from_hour->diffInSeconds($today_to_midnight);
+                    $total_time_in_seconds = $total_time_in_seconds + $time_diff_till_midnight;                             
+                    $have_both_hours = false;                
+                    
+                }else if($app_entries[$date][$x]->pivot->event == "closes"){
+    
+                    $total_time_in_seconds = $total_time_in_seconds - $time_diff_till_midnight;
+                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->pivot->date);                        
+                    $have_both_hours = true;
+    
+                }
+                
+                if($have_both_hours)
+                {
+                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour);
+    
+                }           
+    
+            }
+
+        }
+
+        $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();
+
+        return response()->json([
+
+            "app_name" => $app_entry->name,
+            "total_usage_time" => $total_usage_time,  
+
+        ]);
+
+    }
+
+    //TIEMPO TOTAL DE DIAS ANTERIORES//
+    public function total_usage_time_per_day()
+    {
+
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
 
     ///BETA///
     public function get_app_details(Request $request, $id)
