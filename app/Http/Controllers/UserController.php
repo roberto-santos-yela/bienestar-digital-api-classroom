@@ -160,7 +160,7 @@ class UserController extends Controller
     }
 
     ///RECUPERAR CONTRASEÑA// //NO TERMINADO//
-    public function recover_password(Request $request){
+    public function recover_user_password(Request $request){
 
         $user = User::where('email', '=', $request->email)->first();
         
@@ -188,35 +188,7 @@ class UserController extends Controller
 
         ]);
 
-    }
-
-    //POR TERMINAR//
-    public function store_app_data(Request $request)
-    {
-        $request_user = $request->user; 
-        $array_csv = array_map('str_getcsv', file('/Applications/MAMP/htdocs/bienestar-digital-api-classroom/csv_files/usage.csv'));   
-
-        foreach ($array_csv as $key => $line) {
-                              
-            if($key != 0)
-            {
-                $name = $line[1];             
-                $app = App::where('name', '=', $name)->first();
-                
-                $request_user->apps()->attach($app->id, [
-
-                    'date' => $line[0], 
-                    'event' => $line[2],                      
-                    'latitude' => $line[3],
-                    'longitude' => $line[4],
-        
-                ]); 
-
-            }
-    
-        }
-
-    }
+    }    
 
     //USO TOTAL//
     ///PRUEBA GET TIME DIFERENCE/// ////TERMINADO CON PINZAS///
@@ -261,7 +233,7 @@ class UserController extends Controller
 
     }
 
-    //PRUEBA//
+    //PRUEBA////GUARDARLO COMO ORO EN PANO//
     public function daily_usage_time(Request $request, $id)
     {
         $request_user = $request->user;
