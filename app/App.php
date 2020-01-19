@@ -12,7 +12,7 @@ class App extends Model
     public function users()
     {
         return $this->belongsToMany('App\User', 'users_have_apps')
-                    ->withPivot('date', 'event', 'latitude', 'longitude') 
+                    ->withPivot('date', 'event', 'latitude', 'longitude')         
                     ->withTimestamps();                    
     }
     
