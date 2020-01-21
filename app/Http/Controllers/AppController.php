@@ -103,11 +103,21 @@ class AppController extends Controller
 
     //INTRODUCIR LISTA DE APLICACIONES// 
     //POR TERMINAR// //FALTA HACER QUE NO SE REPITA Y QUE SE PASE POR CSV A LA APLICACIÓN//
-    public function store_apps_list()
+    public function store_apps_list(Request $request)
     {        
         //$array_csv = array_map('str_getcsv', file('/Applications/MAMP/htdocs/bienestar-digital-api-classroom/csv_files/apps_list.csv')); 
-        $array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\apps_list.csv')); 
+        //$array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\apps_list.csv')); 
         
+        $lines = explode(PHP_EOL, $request->csv);
+        
+        $array_csv = [];
+        
+        foreach ($lines as $line) {
+            
+            $array_csv[] = str_getcsv($line);
+        
+        }
+
         foreach ($array_csv as $key => $line) {
 
             if($key != 0)
