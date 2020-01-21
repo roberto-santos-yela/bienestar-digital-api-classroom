@@ -27,6 +27,7 @@ class User extends Model
     public function apps_dates()
     {
         return $this->belongsToMany('App\App', 'users_have_apps')
+                    ->withPivot('event')    
                     ->select(DB::raw('DATE(date) as date_group'), 'date')                                   
                     ->withTimestamps();                    
     }
