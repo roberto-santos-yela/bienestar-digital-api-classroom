@@ -391,13 +391,36 @@ class AppController extends Controller
     public function get_app_coordinates(Request $request, $app_id, $app_date)
     {
         $request_user = $request->user;
-        $app = $request_user->apps->where('id', '=', $app_id)->first();
-        $pivot = $app->pivot->where('date', '<=', $app_date)->first();
+        //$app = $request_user->apps->where('id', '=', $app_id)->get();
+        $apps = ['Reloj', 'Instagram'];
+        $keys = ['name', 'latitude', 'longitude'];
+        $data = []; 
+
+        foreach ($apps as $app_name)
+        {
+
+            $app = $request_user->apps_coordinates()->where('name', '=', $app_name)
+                                                    ->where("date", "<=", "2019-11-28 23:40:10")
+                                                    ->latest('date')
+                                                    ->first();
+            
+
+            array_push($data, $app->name, $app->latitude, $app->longitude);
+            $latitude_longitude = array_combine($keys, $data);
+
+        };
         
+        $app = $request_user->apps_coordinates()->where("date", "<=", "2019-11-28 23:40:10")->latest('date')->first();
+        
+        //$apps_prueba = $apps->pivot->select("event")->get();       
+        //$pivot = $app->pivot->where('date', '<=', $app_date)->first();
+
         return response()->json([
-           
-            "latitude" => $pivot->latitude,
-            "longitude" => $pivot->longitude,                         
+
+            $latitude_longitude
+            
+            //"latitude" => $app->latitude,
+            //"longitude" => $app->longitude,                         
 
         ], 200);
 
