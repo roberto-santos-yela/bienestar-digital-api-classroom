@@ -146,7 +146,17 @@ class AppController extends Controller
     public function store_apps_data(Request $request)
     {
         $request_user = $request->user; 
-        $array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\usage_dummy.csv'));   
+        //$array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\usage_dummy.csv'));
+
+        $lines = explode(PHP_EOL, $request->csv);
+        
+        $array_csv = [];
+        
+        foreach ($lines as $line) {
+            
+            $array_csv[] = str_getcsv($line);
+        
+        }        
 
         foreach ($array_csv as $key => $line) {
                               
