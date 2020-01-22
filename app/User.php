@@ -32,4 +32,12 @@ class User extends Model
                     ->withTimestamps();                    
     }
 
+    public function apps_coordinates()
+    {
+        return $this->belongsToMany('App\App', 'users_have_apps')
+                    ->withPivot('date', 'latitude', 'longitude')    
+                    ->select('name', 'date', 'latitude', 'longitude')                                   
+                    ->withTimestamps();                    
+    }
+
 }
