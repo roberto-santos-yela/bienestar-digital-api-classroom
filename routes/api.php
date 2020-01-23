@@ -19,7 +19,7 @@ use Illuminate\Http\Request;
 
 Route::post('/create_user', 'UserController@store');
 Route::post('/user_login', 'UserController@user_login');
-Route::post('/recover_user_password', 'UserController@recover_password');
+Route::post('/recover_user_password', 'UserController@recover_user_password');
 
 ///PPRUEBA
 Route::get('/generate_password', 'UserController@generate_password');
