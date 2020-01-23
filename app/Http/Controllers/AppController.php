@@ -16,7 +16,7 @@ class AppController extends Controller
      */
     public function index()
     {
-        $apps = App::all();
+        $apps = App::select('id','name','logo')->get();  
         
         return response()->json(
 
