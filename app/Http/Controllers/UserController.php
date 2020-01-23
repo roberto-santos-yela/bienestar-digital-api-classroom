@@ -163,31 +163,42 @@ class UserController extends Controller
     public function recover_user_password(Request $request){
 
         $user = User::where('email', '=', $request->email)->first();
+
+        if($user->email == $request->confirm_email)
+        {
+            $password_generator = new PasswordGenerator();
+            $new_password = $password_generator->generate_password();        
+            $user->password = encrypt($new_password);
+            $user->save();
+    
+            $to_name = $user->name;
+            $to_email = $user->email;
+
+            $data = array('name'=> $to_name, "body" => "Su nueva contraseña es:", "new_password" => $new_password);
         
-        $password_generator = new PasswordGenerator();
-        $new_password = $password_generator->generate_password();        
-        $user->password = encrypt($new_password);
-        $user->save();
-
-        $to_name = 'roberto';
-        $to_email = 'roberto_santos_apps1ma1819@cev.com';
-        $data = array('name'=>"Sam Jose", "body" => "Test mail");
+            Mail::send('emails.mail', $data, function($message) use ($to_name, $to_email) {
+                
+                $message->to($to_email, $to_name)
+                        ->subject('Bienestar Digital Mail Recovery');
+        
+                $message->from('roberto_santos_apps1ma1819@cev.com','Bienestar Digital');
+            });
     
-        Mail::send('emails.mail', $data, function($message) use ($to_name, $to_email) {
-            
-            $message->to($to_email, $to_name)
-                    ->subject('Bienestar Digital Mail Recovery');
+            return response()->json([
     
-            $message->from('roberto_santos_apps1ma1819@cev.com','Bienestar Digital');
-        });
+                "message" => "a new password has been sent to your e-mail address",
+                "new_password" => $new_password,
+    
+            ]);
 
-        return response()->json([
+        }else{
 
-            "message" => "a new password has been sent to your e-mail address",
-            "new_password" => $new_password,
-
-        ]);
-
+            return response()->json([
+    
+                "message" => "¡Passwords should match!",                
+    
+            ]);
+        }
     }    
 
     //USO TOTAL//
