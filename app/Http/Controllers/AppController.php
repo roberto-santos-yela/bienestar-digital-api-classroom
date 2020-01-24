@@ -184,7 +184,8 @@ class AppController extends Controller
     public function total_usage_time(Request $request, $id)
     {
         $request_user = $request->user;
-        $app_entries = $request_user->apps()->wherePivot('app_id', $id)->whereDate('date', "=", '2019-11-19')->get();//ATENTO A LA DATE//    
+        //$app_entries = $request_user->apps()->wherePivot('app_id', $id)->whereDate('date', "=", '2019-11-19')->get();//ATENTO A LA DATE//    
+        $app_entries = $request_user->apps()->wherePivot('app_id', $id)->get();//ATENTO A LA DATE//
         $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();   
         $app_entries_lenght = count($app_entries);
         $total_time_in_seconds = 0;
