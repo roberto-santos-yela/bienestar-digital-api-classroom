@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use DateTime;
 use App\App;
 use App\UserHasApp;
+use App\Helpers\AppTimeCalculator;
+use App\Helpers\AppTimeStorage;
 
 class AppController extends Controller
 {
@@ -100,15 +103,15 @@ class AppController extends Controller
     {
         //
     }
-
-    //INTRODUCIR LISTA DE APLICACIONES// 
-    //POR TERMINAR// //FALTA HACER QUE NO SE REPITA Y QUE SE PASE POR CSV A LA APLICACIÓN//
+    
     public function store_apps_list(Request $request)
     {        
         //$array_csv = array_map('str_getcsv', file('/Applications/MAMP/htdocs/bienestar-digital-api-classroom/csv_files/apps_list.csv')); 
         //$array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\apps_list.csv')); 
+        //MAC//$lines = explode(PHP_EOL, $request->csv);
+        //PC//$lines = explode("\n", $request->csv);
         
-        $lines = explode(PHP_EOL, $request->csv);
+        $lines = explode("\n", $request->csv);
         
         $array_csv = [];
         
@@ -116,16 +119,22 @@ class AppController extends Controller
             
             $array_csv[] = str_getcsv($line);
         
-        }
+        }        
 
-        foreach ($array_csv as $key => $line) {
+        foreach ($array_csv as $key => $line) {           
 
             if($key != 0)
             {
-                $app = new App();
-                $app->logo = $line[0];
-                $app->name = $line[1];
-                $app->save();
+                $is_app_repeated = App::where('name', '=', $line[1])->first();
+                
+                if($is_app_repeated == null){
+
+                    $app = new App();
+                    $app->logo = $line[0];               
+                    $app->name = $line[1];                
+                    $app->save();
+
+                }
 
             }     
                        
@@ -135,21 +144,21 @@ class AppController extends Controller
 
         return response()->json(
 
-            $apps                      
+            $apps                 
 
         , 200);
 
     }
-
-    //PETICIÓN QUE INTRODUCE LOS DATOS DE USO DE LAS APLICACIONES MEDIANTE UN CSV Y LOS VINCULA CON EL USUARIO// 
-    //POR TERMINAR// //FALTA INTRODUCIR MEDIANTE UN CSV DE LA APLICACIÓN//   
+   
     public function store_apps_data(Request $request)
     {
-        $request_user = $request->user; 
         //$array_csv = array_map('str_getcsv', file('D:\Programas\xampp\htdocs\bienestar-digital-api-classroom\csv_files\usage_dummy.csv'));
-
-        $lines = explode(PHP_EOL, $request->csv);
+        //MAC//$lines = explode(PHP_EOL, $request->csv);
+        //PC//$lines = explode("\n", $request->csv);
+        $request_user = $request->user; 
         
+        $lines = explode("\n", $request->csv);
+                
         $array_csv = [];
         
         foreach ($lines as $line) {
@@ -179,9 +188,138 @@ class AppController extends Controller
         }
 
     }
+    
+    public function get_app_total_usage_time(Request $request, $id){
+
+        $request_user = $request->user;          
+        
+        $app_entries = $request_user->apps()->wherePivot('app_id', $id)->get();
+        $app_entry = $request_user->apps()->wherePivot('app_id', $id)->select('name')->first();
+        
+        $app_time_calculator = new AppTimeCalculator($app_entries);
+        $total_usage_time_in_seconds = $app_time_calculator->app_total_hours();
+        $total_usage_time = Carbon::createFromTimestampUTC($total_usage_time_in_seconds)->toTimeString();
+
+        return response()->json([
+
+            "app_name" => $app_entry->name,
+            "total_usage_time" => $total_usage_time,  
+
+        ], 200);
+
+    }
+
+    public function get_apps_statistics(Request $request)
+    {
+        $request_user = $request->user;        
+        $apps_names = App::select('name')->get();
+        $apps_time_averages = [];      
+      
+        foreach ($apps_names as $app_name)
+        {           
+            $app_entries = $request_user->apps()->where('name', '=', $app_name["name"])->get();
+            $app_time_calculator = new AppTimeCalculator($app_entries);
+            $total_usage_time_in_seconds = $app_time_calculator->app_total_hours();
+            $total_usage_time = Carbon::createFromTimestampUTC($total_usage_time_in_seconds)->toTimeString();                    
+            
+            $total_usage_time_in_milliseconds  = $total_usage_time_in_seconds * 1000;
+            
+            $day_average = Carbon::createFromTimestampMs($total_usage_time_in_milliseconds / 365)->format('H:i:s.u');            
+            $week_average = Carbon::createFromTimestampMs($total_usage_time_in_milliseconds / 52)->format('H:i:s.u');
+            $month_average = Carbon::createFromTimestampMs($total_usage_time_in_milliseconds / 12)->format('H:i:s.u');
+          
+            $apps_time_averages[] = new AppTimeStorage($app_name["name"], $total_usage_time, $day_average, $week_average, $month_average);
+
+        }
+
+        return response()->json(
+            
+            $apps_time_averages           
+                       
+        , 200);
+
+    }
+
+    //TIEMPO TOTAL DE DIAS ANTERIORES// // CASI TERMINADO //
+    public function total_usage_time_per_day(Request $request)
+    {
+        $request_user = $request->user;
+        $app_entries = $request_user->apps_dates()->get()->groupBy('date_group'); 
+        
+        $collection = collect($app_entries);
+        $keys = $collection->keys();
+
+        $dates = [];
+        $total_usage_times = [];
+        $dates = $keys->all();
+     
+        foreach ($dates as $date)
+        {
+            $app_entries_lenght = count($app_entries[$date]); 
+            $total_time_in_seconds = 0;
+
+            for ($x = 0; $x <= $app_entries_lenght - 1; $x++) {
+
+                $have_both_hours = false;
+    
+                if($app_entries[$date][$x]->pivot->event == "opens")
+                {
+                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->date);
+                    
+                }else{
+    
+                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->date);                              
+                    
+                    $have_both_hours = true;
+    
+                }
+    
+                if($have_both_hours)
+                {
+                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour); 
+                    $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();                   
+                    array_push($total_usage_times, $total_usage_time);
+                }
+                
+            }
+
+        }
+
+        $dates_and_total_usage_times = array_combine($dates, $total_usage_times);
+
+        return response()->json(
+            
+            $dates_and_total_usage_times
+ 
+        , 200);
+
+    }
+
+    public function get_apps_coordinates(Request $request)
+    {
+        $request_user = $request->user;        
+        $apps_names = App::select('name')->get();
+        $apps_coordinates = []; 
+
+        foreach ($apps_names as $app_name)
+        {
+            $app_entry = $request_user->apps()->where('name', '=', $app_name["name"])->latest('date')->first();
+            $app_time_storage = new AppTimeStorage();
+            $apps_coordinates[] = $app_time_storage->create()->set_coordinates($app_entry->name, $app_entry->pivot->latitude, $app_entry->pivot->longitude);
+        }
+
+        return response()->json(
+
+            $apps_coordinates                                            
+
+        , 200);
+       
+    }
+
+    ///////////////////////////////////////////FINAL/////////////////////////////////////////////
 
     //PRUEBA////GUARDARLO COMO ORO EN PANO//
-    public function total_usage_time(Request $request, $id)
+    public function SAVE_total_usage_time(Request $request, $id)
     {
         $request_user = $request->user;
         //$app_entries = $request_user->apps()->wherePivot('app_id', $id)->whereDate('date', "=", '2019-11-19')->get();//ATENTO A LA DATE//    
@@ -271,169 +409,6 @@ class AppController extends Controller
             "total_usage_time" => $total_usage_time,  
 
         ]);
-
-    }
-
-    //TIEMPO DE USO TOTAL// //HACE FALTA REFACTORIZAR//
-    public function total_usage_time_beta(Request $request, $id)
-    {
-        $request_user = $request->user;       
-        $app_entries = $request_user->apps_dates()->get()->groupBy('date_group');     
-        $date = "2019-11-18";
-
-                 
-        $app_entry = $request_user->apps()->wherePivot('app_id', $id)->first();   
-        $app_entries_lenght = count($app_entries[$date]);
-
-
-        $dates = [];
-
-        foreach ($app_entries as $key => $value) {
-            
-
-            array_push($dates, $value);
-            echo $dates;
-            
-        }
-
-        return response()->json(
-
-            $app_entries
-
-
-        , 200);
-        
-    }
-
-    //TIEMPO TOTAL DE DIAS ANTERIORES// // CASI TERMINADO //
-    public function total_usage_time_per_day(Request $request)
-    {
-        $request_user = $request->user;
-        $app_entries = $request_user->apps_dates()->get()->groupBy('date_group'); 
-        
-        $collection = collect($app_entries);
-        $keys = $collection->keys();
-
-        $dates = [];
-        $total_usage_times = [];
-        $dates = $keys->all();
-     
-        foreach ($dates as $date)
-        {
-            $app_entries_lenght = count($app_entries[$date]); 
-            $total_time_in_seconds = 0;
-
-            for ($x = 0; $x <= $app_entries_lenght - 1; $x++) {
-
-                $have_both_hours = false;
-    
-                if($app_entries[$date][$x]->pivot->event == "opens")
-                {
-                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->date);
-                    
-                }else{
-    
-                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->date);                              
-                    
-                    $have_both_hours = true;
-    
-                }
-    
-                if($have_both_hours)
-                {
-                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour); 
-                    $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();                   
-                    array_push($total_usage_times, $total_usage_time);
-                }
-                
-            }
-
-        }
-
-        $dates_and_total_usage_times = array_combine($dates, $total_usage_times);
-
-        return response()->json(
-            
-            $dates_and_total_usage_times
- 
-        , 200);
-
-    }
-
-    ///BETA///
-    public function get_app_details(Request $request, $id)
-    {
-        $request_user = $request->user;
-        $user_apps = $request_user->apps;
-        $app = $user_apps->where('id', $id)->first(); 
-
-
-        var_dump($id); exit;              
-
-
-        return response()->json([
-
-            //"total_usage_time" => $user_apps,
-            "jeilo" => $app,
-
-        ], 200);
-
-    }
-
-    ///FALTA POR TERMINAR//
-    public function get_app_statistics(Request $request)
-    {
-        $request_user = $request->user;
-        $apps = $request_user->apps;
-        $primera_app = $apps[1]->pivot->total_usage_time;
-        $primera_app_name = $apps[1]->name;
-
-        return response()->json([
-
-            "name" => $primera_app_name,
-            "total_usage_time" => $primera_app,
-            "array_pruebea" => $array_prueba,
-
-        ]);
-
-    }
-
-    ///NECESITA CORRECCIÓN//
-    public function get_app_coordinates(Request $request, $app_id, $app_date)
-    {
-        $request_user = $request->user;
-        //$app = $request_user->apps->where('id', '=', $app_id)->get();
-        $apps = ['Reloj', 'Instagram'];
-        $keys = ['name', 'latitude', 'longitude'];
-        $data = []; 
-
-        foreach ($apps as $app_name)
-        {
-
-            $app = $request_user->apps_coordinates()->where('name', '=', $app_name)
-                                                    ->where("date", "<=", "2019-11-28 23:40:10")
-                                                    ->latest('date')
-                                                    ->first();
-            
-
-            array_push($data, $app->name, $app->latitude, $app->longitude);
-            $latitude_longitude = array_combine($keys, $data);
-
-        };
-        
-        $app = $request_user->apps_coordinates()->where("date", "<=", "2019-11-28 23:40:10")->latest('date')->first();
-        
-        //$apps_prueba = $apps->pivot->select("event")->get();       
-        //$pivot = $app->pivot->where('date', '<=', $app_date)->first();
-
-        return response()->json([
-
-            $latitude_longitude
-            
-            //"latitude" => $app->latitude,
-            //"longitude" => $app->longitude,                         
-
-        ], 200);
 
     }
 
