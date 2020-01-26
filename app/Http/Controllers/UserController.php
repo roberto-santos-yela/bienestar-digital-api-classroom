@@ -337,8 +337,6 @@ class UserController extends Controller
 
     }
 
-
-
     //CREAR RESTRICCIONES// //TERMINADO//
     public function create_restriction(Request $request, $id)
     {
@@ -361,7 +359,8 @@ class UserController extends Controller
                 'usage_to_hour' => $request->usage_to_hour,
     
             ]);   
-        }     
+        }  
+                  
     }
 
     ///GENERAR NUEVA CONTASEÑA///
