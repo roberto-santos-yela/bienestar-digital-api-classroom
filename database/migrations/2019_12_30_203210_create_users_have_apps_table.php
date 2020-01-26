@@ -21,8 +21,8 @@ class CreateUsersHaveAppsTable extends Migration
             $table->foreign('app_id')->references('id')->on('apps')->onDelete('cascade');
             $table->dateTime('date'); 
             $table->string('event');           
-            $table->double('latitude', 8, 6);
-            $table->double('longitude', 8, 6);
+            $table->double('latitude', 8);
+            $table->double('longitude', 8);
             $table->timestamps();
         });
     }
