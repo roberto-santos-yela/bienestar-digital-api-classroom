@@ -405,25 +405,14 @@ class UserController extends Controller
         $request_user = $request->user;
         $current_password = decrypt($request_user->password);
 
-        if($current_password == $request->new_password)
-        {
-            return response()->json([
-
-                "message" => "new password can't be the same as your old password", 
-    
-            ], 400);
- 
-        }
-        
-        if($request->new_password == $request->new_password_again)
+        if($current_password == $request->old_password)
         {
             $request_user->password = encrypt($request->new_password);
             $request_user->save();
 
             return response()->json([
 
-                "message" => "user password changed",
-                "new password" => $request->new_password, //PRUEBA//
+                "new password" => $request->new_password,
     
             ], 200);
 
@@ -431,9 +420,9 @@ class UserController extends Controller
             
             return response()->json([
 
-                "message" => "both password fields have to match", 
+                "message" => "old password field is incorrect", 
     
-            ], 400);
+            ], 401);
 
         }
 
