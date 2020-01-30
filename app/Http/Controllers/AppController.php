@@ -9,6 +9,7 @@ use App\App;
 use App\UserHasApp;
 use App\Helpers\AppTimeCalculator;
 use App\Helpers\AppTimeStorage;
+use Illuminate\Support\Facades\DB;
 
 class AppController extends Controller
 {
@@ -299,18 +300,44 @@ class AppController extends Controller
     {
         $request_user = $request->user;        
         $apps_names = App::select('name')->get();
-        $apps_coordinates = []; 
-
+        $apps_coordinates = [];
+        $apps_coordinates_groups = [];
+ 
         foreach ($apps_names as $app_name)
         {
             $app_entry = $request_user->apps()->where('name', '=', $app_name["name"])->latest('date')->first();
             $app_time_storage = new AppTimeStorage();
             $apps_coordinates[] = $app_time_storage->create()->set_coordinates($app_entry->name, $app_entry->pivot->latitude, $app_entry->pivot->longitude);
+
+        }
+
+        foreach ($apps_coordinates as $app_coordinates_entry)
+        {
+            $is_found = false;
+
+            foreach ($apps_coordinates_groups as $new_array_line)
+            {        
+                if($app_coordinates_entry->latitude == $new_array_line->latitude && $app_coordinates_entry->longitude == $new_array_line->longitude){
+              
+                    $new_array_line->name .= " " . $app_coordinates_entry->name;
+                    $is_found = true;
+                    break;
+
+                }
+
+            }
+
+            if($is_found == false){
+
+                $apps_coordinates_groups[] = $app_coordinates_entry;
+
+            }
+
         }
 
         return response()->json(
 
-            $apps_coordinates                                            
+            $apps_coordinates_groups
 
         , 200);
        
