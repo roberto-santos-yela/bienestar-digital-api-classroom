@@ -242,58 +242,31 @@ class AppController extends Controller
     }
 
     //TIEMPO TOTAL DE DIAS ANTERIORES// // CASI TERMINADO //
-    public function total_usage_time_per_day(Request $request)
+    public function total_usage_time_per_day(Request $request, $id)
     {
-        $request_user = $request->user;
-        $app_entries = $request_user->apps_dates()->get()->groupBy('date_group'); 
-        
-        $collection = collect($app_entries);
-        $keys = $collection->keys();
+        $request_user = $request->user;        
+        $app_entries = $request_user->apps;
+        $app_entries_by_date = $app_entries->where("id", "=", $id)->groupBy(function($item) {
+            $new_date = Carbon::parse($item->pivot->date);
+            return $new_date->format('Y-m-d');
+        });
+        $app_dates_per_day = [];
 
-        $dates = [];
-        $total_usage_times = [];
-        $dates = $keys->all();
-     
-        foreach ($dates as $date)
-        {
-            $app_entries_lenght = count($app_entries[$date]); 
-            $total_time_in_seconds = 0;
+        foreach ($app_entries_by_date as $key => $entry) {
 
-            for ($x = 0; $x <= $app_entries_lenght - 1; $x++) {
-
-                $have_both_hours = false;
-    
-                if($app_entries[$date][$x]->pivot->event == "opens")
-                {
-                    $from_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->date);
-                    
-                }else{
-    
-                    $to_hour = Carbon::createFromFormat('Y-m-d H:i:s', $app_entries[$date][$x]->date);                              
-                    
-                    $have_both_hours = true;
-    
-                }
-    
-                if($have_both_hours)
-                {
-                    $total_time_in_seconds += $from_hour->diffInSeconds($to_hour); 
-                    $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();                   
-                    array_push($total_usage_times, $total_usage_time);
-                }
-                
-            }
+            $app_time_calculator = new AppTimeCalculator($entry);        
+            $total_usage_time_in_seconds = $app_time_calculator->app_total_hours();
+            $total_usage_time = Carbon::createFromTimestampUTC($total_usage_time_in_seconds)->toTimeString();
+            $app_dates_per_day[$key] = $total_usage_time;
 
         }
 
-        $dates_and_total_usage_times = array_combine($dates, $total_usage_times);
-
         return response()->json(
-            
-            $dates_and_total_usage_times
- 
-        , 200);
 
+            $app_dates_per_day 
+
+        , 200);
+    
     }
 
     public function get_apps_coordinates(Request $request)
