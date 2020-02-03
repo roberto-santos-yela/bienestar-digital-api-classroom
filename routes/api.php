@@ -45,9 +45,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/total_usage_time/{id}', 'AppController@total_usage_time');
     Route::get('/total_usage_time_beta/{id}', 'AppController@total_usage_time_beta');  
 
-    Route::get('/get_app_total_usage_time/{id}', 'AppController@get_app_total_usage_time'); 
-    
-       
+    Route::get('/get_app_total_usage_time/{id}', 'AppController@get_app_total_usage_time');    
+    Route::get('/total_usage_time_per_day/{id}', 'AppController@total_usage_time_per_day');        
+
     Route::post('/store_apps_list', 'AppController@store_apps_list');
     Route::post('/store_apps_data', 'AppController@store_apps_data');  
 
