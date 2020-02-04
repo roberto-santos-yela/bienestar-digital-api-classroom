@@ -285,12 +285,89 @@ class AppController extends Controller
 
         return response()->json(
 
-            $apps_restrictions[0] 
+            $apps_restrictions
 
         , 200);
 
     }
     /////
+
+    public function get_apps_usage_range(Request $request, $date)
+    {
+        $request_user = $request->user;
+        $apps = App::all();
+        $apps_ranges = [];
+
+        foreach ($apps as $app)
+        {
+            $app_initial_range = DB::table('users_have_apps')
+                                ->where('user_id', '=', $request_user->id)
+                                ->where('app_id', '=', $app->id)
+                                ->whereDate('date', '=', $date)
+                                ->where('event', '=', 'opens')
+                                ->first(); 
+
+            $app_finish_range = DB::table('users_have_apps')
+                                ->where('user_id', '=', $request_user->id)
+                                ->where('app_id', '=', $app->id)
+                                ->whereDate('date', '=', $date)
+                                ->where('event', '=', 'closes')
+                                ->orderBy('date', 'desc')
+                                ->first();
+
+            $app_opens_no_closes = DB::table('users_have_apps')
+                                ->where('user_id', '=', $request_user->id)
+                                ->where('app_id', '=', $app->id)
+                                ->whereDate('date', '=', $date)
+                                ->where('event', '=', 'opens')
+                                ->orderBy('date', 'desc')
+                                ->first();
+
+            if($app_initial_range == NULL && $app_finish_range == NULL && $app_opens_no_closes == NULL)
+            {
+                $apps_ranges[] = new AppRestrictionManager($app->name, "Sin tiempo de uso", "Sin tiempo de uso", "Sin tiempo de uso");
+            
+            }else if($app_initial_range == NULL && $app_opens_no_closes == NULL)
+            {
+                $app_finish_range_hour = Carbon::parse($app_finish_range->date)->format('H:i:s');
+                $app_entries = $request_user->apps()->where('name', '=', $app->name)->whereDate('date', '=', $date)->get();
+                $app_time_calculator = new AppTimeCalculator($app_entries);
+                $total_usage_time_in_seconds = $app_time_calculator->app_total_hours();
+                $total_usage_time = Carbon::createFromTimestampUTC($total_usage_time_in_seconds)->toTimeString();
+                $apps_ranges[] = new AppRestrictionManager($app->name, "00:00:00", $app_finish_range_hour, $total_usage_time);
+
+            }else{
+
+                if($app_finish_range->date < $app_opens_no_closes->date){
+
+                    $app_initial_range_hour = Carbon::parse($app_initial_range->date)->format('H:i:s');
+                    $app_entries = $request_user->apps()->where('name', '=', $app->name)->whereDate('date', '=', $date)->get();
+                    $app_time_calculator = new AppTimeCalculator($app_entries);
+                    $total_usage_time_in_seconds = $app_time_calculator->app_total_hours();
+                    $total_usage_time = Carbon::createFromTimestampUTC($total_usage_time_in_seconds)->toTimeString();
+                    $apps_ranges[] = new AppRestrictionManager($app->name, $app_initial_range_hour, "00:00:00", $total_usage_time);
+
+                }else{
+
+                    $app_initial_range_hour = Carbon::parse($app_initial_range->date)->format('H:i:s');
+                    $app_finish_range_hour = Carbon::parse($app_finish_range->date)->format('H:i:s');
+                    $app_entries = $request_user->apps()->where('name', '=', $app->name)->whereDate('date', '=', $date)->get();
+                    $app_time_calculator = new AppTimeCalculator($app_entries);
+                    $total_usage_time_in_seconds = $app_time_calculator->app_total_hours();
+                    $total_usage_time = Carbon::createFromTimestampUTC($total_usage_time_in_seconds)->toTimeString();
+                    $apps_ranges[] = new AppRestrictionManager($app->name, $app_initial_range_hour, $app_finish_range_hour, $total_usage_time);
+
+                }
+            }
+        }
+
+        return response()->json(
+
+            $apps_ranges
+
+        , 200);
+
+    }
 
     public function get_apps_coordinates(Request $request)
     {
