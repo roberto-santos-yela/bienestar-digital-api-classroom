@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use DateTime;
 use App\App;
 use App\UserHasApp;
+use App\Helpers\AppRestrictionManager;
 use App\Helpers\AppTimeCalculator;
 use App\Helpers\AppTimeStorage;
 use Illuminate\Support\Facades\DB;
@@ -268,6 +269,28 @@ class AppController extends Controller
         , 200);
     
     }
+    /////
+    public function get_apps_restrictions(Request $request)
+    {
+        $request_user = $request->user;
+        $restrictions = DB::table('users_restrict_apps')->where('user_id', '=', $request_user->id)->get();                      
+        $apps_restrictions = [];
+        
+        foreach ($restrictions as $app_restricion)
+        {
+            $app = DB::table('apps')->where('id', '=', $app_restricion->app_id)->first();
+            $apps_restrictions[] = new AppRestrictionManager($app->name, $app_restricion->usage_from_hour, $app_restricion->usage_to_hour, $app_restricion->maximum_usage_time);
+        
+        }
+
+        return response()->json(
+
+            $apps_restrictions[0] 
+
+        , 200);
+
+    }
+    /////
 
     public function get_apps_coordinates(Request $request)
     {
