@@ -54,6 +54,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/get_app_details', 'AppController@get_app_details');
     Route::get('/get_app_statistics', 'AppController@get_app_statistics');
     Route::get('/get_apps_coordinates', 'AppController@get_apps_coordinates');
+
+    Route::get('/get_apps_restrictions', 'AppController@get_apps_restrictions');
     
      
     Route::get('/get_apps_statistics', 'AppController@get_apps_statistics');
