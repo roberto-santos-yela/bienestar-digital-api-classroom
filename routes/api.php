@@ -57,6 +57,8 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/get_apps_restrictions', 'AppController@get_apps_restrictions');
     
+    Route::get('/get_apps_usage_range/{date}', 'AppController@get_apps_usage_range');
+    
      
     Route::get('/get_apps_statistics', 'AppController@get_apps_statistics');
 
