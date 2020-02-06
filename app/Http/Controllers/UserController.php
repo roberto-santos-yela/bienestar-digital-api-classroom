@@ -199,7 +199,21 @@ class UserController extends Controller
     
             ]);
         }
-    }    
+    }
+    
+    public function send_notification_email(Request $request){
+
+        $request_user = $request->user;
+        $to_name = $request_user->name;
+        $to_email = $request_user->email;
+        $data = array('name' => $to_name, 'app_name' => $request->app_name);
+ 
+        Mail::send('emails.notification_mail', $data, function($message) use ($to_name, $to_email) {
+            $message->to($to_email, $to_name)->subject('Bienestar Digital - App Restriccion Violation');
+            $message->from('roberto_santos_apps1ma1819@cev.com','Bienestar Digital');
+        });
+        
+    }
 
     //USO TOTAL//
     ///PRUEBA GET TIME DIFERENCE/// ////TERMINADO CON PINZAS///
