@@ -35,7 +35,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/change_user_password', 'UserController@change_user_password');
     Route::get('/get_time_diff/{id}', 'UserController@get_time_diff');
     Route::get('/daily_usage_time/{id}', 'UserController@daily_usage_time');
-    
+   
+
+    Route::post('/send_notification_email', 'UserController@send_notification_email');
         
     Route::apiResource('/app', 'AppController'); 
     
@@ -58,6 +60,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/get_apps_restrictions', 'AppController@get_apps_restrictions');
     
     Route::get('/get_apps_usage_range/{date}', 'AppController@get_apps_usage_range');
+
     
      
     Route::get('/get_apps_statistics', 'AppController@get_apps_statistics');
