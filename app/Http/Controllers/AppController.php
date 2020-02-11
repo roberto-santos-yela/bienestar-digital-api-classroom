@@ -10,6 +10,7 @@ use App\UserHasApp;
 use App\Helpers\AppRestrictionManager;
 use App\Helpers\AppTimeCalculator;
 use App\Helpers\AppTimeStorage;
+use App\Helpers\AppDataManager;
 use Illuminate\Support\Facades\DB;
 
 class AppController extends Controller
@@ -417,6 +418,34 @@ class AppController extends Controller
     }
 
     ///////////////////////////////////////////FINAL/////////////////////////////////////////////
+    ////SIN COMPLETAR////
+    public function get_apps_data_with_today_usage(Request $request)
+    {
+        $request_user = $request->user;
+        $app_entries = $request_user->apps();        
+        $apps = App::all();
+        
+        $apps_data = [];
+
+            $app_entries_by_date = $app_entries->where("id", "=", 1)->get();
+            $app_time_calculator = new AppTimeCalculator($app_entries_by_date);        
+            $total_usage_time_in_seconds = $app_time_calculator->app_total_hours();
+            $total_usage_time = Carbon::createFromTimestampUTC($total_usage_time_in_seconds)->toTimeString();
+            $new_app = new AppDataManager("pepe", "pepe", "pepe", $total_usage_time);
+            $apps_data[] = $new_app;
+
+        foreach ($apps as $app)
+        {
+        }
+
+        return response()->json(
+
+            //$app_entries_by_date
+            $apps_data
+            //$apps_array
+
+        , 200);
+    }
 
     //PRUEBA////GUARDARLO COMO ORO EN PANO//
     public function SAVE_total_usage_time(Request $request, $id)
