@@ -52,25 +52,14 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::post('/store_apps_list', 'AppController@store_apps_list');
     Route::post('/store_apps_data', 'AppController@store_apps_data');  
-
+    Route::get('/get_apps_data_with_today_usage', 'AppController@get_apps_data_with_today_usage');
     Route::get('/get_app_details', 'AppController@get_app_details');
     Route::get('/get_app_statistics', 'AppController@get_app_statistics');
     Route::get('/get_apps_coordinates', 'AppController@get_apps_coordinates');
-
     Route::get('/get_apps_restrictions', 'AppController@get_apps_restrictions');
-    
     Route::get('/get_apps_usage_range/{date}', 'AppController@get_apps_usage_range');
-
-    
-     
     Route::get('/get_apps_statistics', 'AppController@get_apps_statistics');
-
-
     Route::get('/prueba', 'AppController@prueba');
-    
-     
-
-
 
 });
 
