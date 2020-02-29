@@ -88,10 +88,6 @@ class AppTimeCalculator {
             }
         }
 
-        //return $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->toTimeString();
-        //return $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->diffInSeconds();
         return $total_usage_time = Carbon::createFromTimestampUTC($total_time_in_seconds)->secondsSinceMidnight();
-        //return $total_time_in_seconds;
-
     }
 }
