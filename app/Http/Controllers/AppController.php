@@ -151,16 +151,18 @@ class AppController extends Controller
     public function store_apps_data(Request $request)
     {
         $request_user = $request->user; 
-        
+
         $lines = explode("\n", $request->csv);
                 
+        //var_dump($lines); exit;
+
         $array_csv = [];
         
         foreach ($lines as $line) {
             
             $array_csv[] = str_getcsv($line);
         
-        }        
+        } 
 
         foreach ($array_csv as $key => $line) {
                               
@@ -185,6 +187,7 @@ class AppController extends Controller
             "message" => "apps' usage data stored",
 
         ], 200);
+        
     }
     
     public function get_app_total_usage_time(Request $request, $id){
